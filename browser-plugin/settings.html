@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown内容提取器 - 设置</title>
+  <style>
+    body {
+      width: 400px;
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .setting-group {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .setting-group h3 {
+      margin-top: 0;
+      color: #555;
+      font-size: 14px;
+    }
+    .setting-item {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    label {
+      font-size: 14px;
+      color: #333;
+    }
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    select {
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .button-group {
+      text-align: center;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #saveButton {
+      background-color: #007BFF;
+      color: white;
+    }
+    #resetButton {
+      background-color: #6c757d;
+      color: white;
+    }
+    #saveButton:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    #resetButton:hover:not(:disabled) {
+      background-color: #545b62;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+  <h1>⚙️ 设置</h1>
+
+  <div class="setting-group">
+    <h3>内容提取设置</h3>
+    <div class="setting-item">
+      <label for="minContentLength">最小内容长度:</label>
+      <input type="number" id="minContentLength" min="100" max="2000" value="300">
+    </div>
+    <div class="setting-item">
+      <label for="includeCodeBlocks">包含代码块</label>
+      <input type="checkbox" id="includeCodeBlocks" checked>
+    </div>
+    <div class="setting-item">
+      <label for="includeImages">包含图片链接</label>
+      <input type="checkbox" id="includeImages" checked>
+    </div>
+    <div class="setting-item">
+      <label for="removeNavigation">移除导航元素</label>
+      <input type="checkbox" id="removeNavigation" checked>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <h3>抓取设置</h3>
+    <div class="setting-item">
+      <label for="maxConcurrentTabs">最大并发标签页:</label>
+      <input type="number" id="maxConcurrentTabs" min="1" max="5" value="2">
+    </div>
+    <div class="setting-item">
+      <label for="maxPages">最大抓取页面数:</label>
+      <input type="number" id="maxPages" min="5" max="200" value="50">
+    </div>
+    <div class="setting-item">
+      <label for="requestDelay">请求间隔(ms):</label>
+      <input type="number" id="requestDelay" min="500" max="5000" value="1000">
+    </div>
+    <div class="setting-item">
+      <label for="retryAttempts">重试次数:</label>
+      <input type="number" id="retryAttempts" min="1" max="5" value="3">
+    </div>
+    <div class="setting-item">
+      <label for="extractionTimeout">提取超时(ms):</label>
+      <input type="number" id="extractionTimeout" min="5000" max="60000" value="20000">
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <h3>翻译设置</h3>
+    <div class="setting-item">
+      <label for="translationModel">翻译模型:</label>
+      <select id="translationModel">
+        <option value="google/gemma-3-12b-it">Gemma 3 12B (快速)</option>
+        <option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (推荐)</option>
+        <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (更强)</option>
+        <option value="openai/gpt-4o-mini">GPT-4o Mini (高质量)</option>
+        <option value="openai/gpt-4o">GPT-4o (最强)</option>
+        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (开源)</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <label for="enableTranslation">启用自动翻译</label>
+      <input type="checkbox" id="enableTranslation" checked>
+    </div>
+    <div class="setting-item">
+      <label for="showTranslationButton">页面加载时显示翻译按钮</label>
+      <input type="checkbox" id="showTranslationButton" checked>
+    </div>
+    <div class="setting-item">
+      <label for="showSmallTranslateButton">显示小翻译按钮（段落/图片旁的按钮）</label>
+      <input type="checkbox" id="showSmallTranslateButton" checked>
+    </div>
+    <div class="setting-item">
+      <label for="showLargeTranslateButton">显示大翻译按钮（固定悬浮入口）</label>
+      <input type="checkbox" id="showLargeTranslateButton" checked>
+    </div>
+
+    <div class="setting-item">
+      <label for="bilingualMode">中英对照模式</label>
+      <input type="checkbox" id="bilingualMode">
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <h3>输出格式</h3>
+    <div class="setting-item">
+      <label for="headingStyle">标题样式:</label>
+      <select id="headingStyle">
+        <option value="atx"># 标题</option>
+        <option value="setext">标题 ===</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <label for="codeBlockStyle">代码块样式:</label>
+      <select id="codeBlockStyle">
+        <option value="fenced">围栏代码块</option>
+        <option value="indented">缩进代码块</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <label for="includeToc">包含目录</label>
+      <input type="checkbox" id="includeToc">
+    </div>
+    <div class="setting-item">
+      <label for="exportLanguage">导出语言:</label>
+      <select id="exportLanguage">
+        <option value="original">保持原有语言</option>
+        <option value="english">统一为英文</option>
+        <option value="chinese">统一为中文</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <h3>调试设置</h3>
+    <div class="setting-item">
+      <label for="debugMode">启用调试模式</label>
+      <input type="checkbox" id="debugMode">
+    </div>
+    <div class="setting-item" id="debugModeInfo" style="display: none; font-size: 12px; color: #666; margin-top: 10px;">
+      ℹ️ 调试模式启用时，所有控制台日志将被保存到日志文件中，每次翻译时自动下载。
+    </div>
+  </div>
+
+  <div class="button-group">
+    <button id="saveButton">保存设置</button>
+    <button id="resetButton">重置为默认</button>
+  </div>
+
+  <div id="statusMessage"></div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

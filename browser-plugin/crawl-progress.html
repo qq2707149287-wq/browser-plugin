@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全站抓取进度</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 35px 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #555;
+            font-size: 16px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 24px;
+            background-color: #ecf0f1;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+            background-size: 400% 100%;
+            animation: shimmer 2s ease-in-out infinite;
+            border-radius: 12px;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .current-url {
+            background: linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            word-break: break-all;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            border-left: 4px solid #667eea;
+        }
+
+        .current-url strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 16px;
+            margin: 20px 0;
+            font-weight: 600;
+            padding: 16px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        /* 实时状态日志 */
+        .status-log-container {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-log-header {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-log {
+            padding: 15px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .log-entry {
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .log-entry.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+            border-left: 3px solid #4caf50;
+        }
+
+        .log-entry.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+            border-left: 3px solid #f44336;
+        }
+
+        .log-entry.skip {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ef6c00;
+            border-left: 3px solid #ff9800;
+        }
+
+        .log-entry.info {
+            background: rgba(33, 150, 243, 0.1);
+            color: #1565c0;
+            border-left: 3px solid #2196f3;
+        }
+
+        .log-entry.timestamp {
+            float: right;
+            opacity: 0.7;
+            font-size: 10px;
+        }
+
+        /* 标签页样式 */
+        .tabs-container {
+            margin-top: 30px;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 16px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+            min-width: 120px;
+        }
+
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            background: white;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-button .close-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #dc3545;
+            color: white;
+            border: none;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            line-height: 1;
+        }
+
+        .tab-button:hover .close-btn {
+            display: block;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 0 0 8px 8px;
+            padding: 0;
+            min-height: 500px;
+            border: 1px solid #e9ecef;
+            border-top: none;
+        }
+
+        .tab-pane {
+            display: none;
+            padding: 25px;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .tab-pane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tab-pane-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .tab-pane-url {
+            font-size: 12px;
+            color: #6c757d;
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+
+        .tab-pane-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #764ba2, #5a3a7f);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #34a853, #2d8a47);
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #2d8a47, #256d38);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(52, 168, 83, 0.3);
+        }
+
+        /* 语言选择器 */
+        .language-selector { position: relative; display: inline-block; }
+        .language-selected { background: linear-gradient(135deg, #ff6b6b, #ee5a52); color: #fff; }
+        .language-selected:hover { background: linear-gradient(135deg, #ee5a52, #e53e3e); transform: translateY(-1px); }
+        .language-selector.open .language-options { display: block; }
+        .language-options { position: absolute; right: 0; top: calc(100% + 8px); display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 10px; z-index: 1000; min-width: 140px; }
+        .language-options button { display: block; width: 100%; text-align: left; padding: 8px 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #e2e8f0; background: #f7fafc; color: #2d3748; }
+        .language-options button:hover { background: #edf2f7; }
+
+        .content-textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            background: #fafafa;
+        }
+
+        .content-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* 批量操作栏 */
+        .bulk-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .bulk-actions-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bulk-actions-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .select-all-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pages-count {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 0 10px;
+                padding: 20px;
+            }
+
+            .tabs-header {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                text-align: left;
+                border-bottom: 1px solid #e9ecef;
+                border-right: none;
+            }
+
+            .tab-button.active {
+                border-bottom-color: #e9ecef;
+                border-right-color: #667eea;
+                border-left: 3px solid #667eea;
+            }
+
+            .bulk-actions {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .bulk-actions-left,
+            .bulk-actions-right {
+                justify-content: center;
+            }
+
+            .tab-pane-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 全站抓取进度</h1>
+
+        <div class="progress-info">
+            <span id="progress-text">准备开始...</span>
+            <span id="progress-percent">0%</span>
+        </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+        </div>
+
+        <div class="current-url">
+            <strong>🌐 当前抓取:</strong>
+            <div id="current-url">-</div>
+        </div>
+
+        <div class="status" id="status">准备开始抓取...</div>
+        <!-- 实时状态日志 -->
+        <div class="status-log-container" id="status-log-container">
+            <div class="status-log-header">📋 抓取日志</div>
+            <div class="status-log" id="status-log">
+                <div class="log-entry info">系统准备就绪，等待开始抓取...</div>
+            </div>
+        </div>
+
+        <!-- 结果展示区域 -->
+
+        <!-- 结果展示区域 -->
+        <div class="tabs-container hidden" id="results-section">
+            <!-- 批量操作栏 -->
+            <div class="bulk-actions">
+                <div class="bulk-actions-left">
+                    <div class="select-all-checkbox">
+                        <input type="checkbox" id="select-all">
+                        <label for="select-all">全选</label>
+                    </div>
+                    <div class="pages-count" id="pages-count">共 0 个页面</div>
+                </div>
+                <div class="bulk-actions-right">
+                    <button class="action-btn copy-btn" id="copy-all-btn">复制全部</button>
+                    <button class="action-btn download-btn" id="download-selected-btn">下载选中</button>
+                    <button class="action-btn download-btn" id="download-all-btn">下载全部</button>
+                        <div class="zip-option" id="zip-option">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+                                <input type="checkbox" id="zip-download-toggle">
+                                <span>打包为 ZIP 下载</span>
+                            </label>
+                        </div>
+
+                    <div class="language-selector" id="language-selector">
+                        <button class="action-btn language-selected" id="language-selected-btn">🌐 原文</button>
+                        <div class="language-options" id="language-options">
+                            <button data-lang="original">原文</button>
+                            <button data-lang="chinese">中文</button>
+                            <button data-lang="english">English</button>
+                            <button data-lang="japanese">日本語</button>
+                            <button data-lang="korean">한국어</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页头部 -->
+            <ul class="tabs-header" id="tabs-header">
+                <!-- 动态生成标签页 -->
+            </ul>
+
+            <!-- 标签页内容 -->
+            <div class="tab-content" id="tab-content">
+                <!-- 动态生成标签页内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="crawl-progress.js"></script>
+</body>
+</html>

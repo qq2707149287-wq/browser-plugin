@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "markdown-content-extractor",
+  "version": "1.0.0",
+  "description": "智能网页内容提取与翻译工具 - 支持 Markdown 导出、网站爬取、AI 翻译",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "chrome-extension",
+    "markdown",
+    "content-extraction",
+    "translation",
+    "web-scraping",
+    "ai-translation"
+  ],
+  "author": "Browser Plugin Contributors",
+  "license": "MIT"
+}

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 页面标题：内容提取器插件弹窗界面 -->
+  <title>内容提取器</title>
+  <style>
+    /* 基础样式：设置弹窗主体尺寸和过渡效果 */
+    body {
+      width: 600px;                    /* 弹窗默认宽度600px */
+      min-height: 400px;               /* 最小高度400px */
+      padding: 15px;                   /* 内边距15px */
+      font-family: Arial, sans-serif;  /* 字体设置 */
+      transition: all 0.3s ease;       /* 所有属性0.3秒平滑过渡 */
+    }
+    
+    /* 扩展状态样式：抓取内容时自动放大弹窗 */
+    body.expanded {
+      min-height: 600px;               /* 扩展状态高度增至600px */
+      width: 700px;                    /* 扩展状态宽度增至700px */
+    }
+    
+    /* 按钮组容器：弹性布局，自动换行 */
+    .button-group {
+      display: flex;                   /* 弹性盒子布局 */
+      flex-wrap: wrap;                 /* 允许按钮换行 */
+      gap: 8px;                        /* 按钮间距8px */
+      margin-bottom: 15px;             /* 底部外边距15px */
+    }
+    
+    /* 通用按钮样式：统一外观和交互效果 */
+    button {
+      flex: 1;                         /* 按钮等宽分布 */
+      min-width: 120px;                /* 最小宽度120px */
+      padding: 8px 12px;               /* 内边距 */
+      border: none;                    /* 无边框 */
+      border-radius: 4px;                /* 圆角4px */
+      background-color: #4285f4;        /* 默认蓝色背景 */
+      color: white;                    /* 白色文字 */
+      cursor: pointer;                   /* 手型光标 */
+      font-size: 14px;                   /* 字号14px */
+    }
+    
+    /* 按钮悬停效果：颜色加深 */
+    button:hover {
+      background-color: #3367d6;        /* 悬停时背景色加深 */
+    }
+    
+    /* 禁用按钮样式：灰色不可点击 */
+    button:disabled {
+      background-color: #cccccc;        /* 灰色背景 */
+      cursor: not-allowed;                /* 禁止光标 */
+    }
+    
+    /* 提取按钮：蓝色主题 */
+    #extractButton {
+      background-color: #4285f4;        /* Google蓝色 */
+    }
+    
+    /* 抓取按钮：橙色主题，停止状态变红色 */
+    #crawlButton {
+      background-color: #fd7e14;        /* 橙色 */
+    }
+    
+    /* 抓取按钮停止状态：红色高亮 */
+    #crawlButton.stop-button {
+      background-color: #ea4335 !important;  /* 红色，强制覆盖 */
+    }
+    
+    /* 下载按钮：绿色主题 */
+    #downloadButton {
+      background-color: #34a853;          /* Google绿色 */
+    }
+
+    /* 设置按钮：黄色主题，深色文字 */
+    #settingsButton {
+      background-color: #fbbc05;        /* Google黄色 */
+      color: #202124;                     /* 深色文字 */
+    }
+
+    /* 设置按钮悬停：深黄色 */
+    #settingsButton:hover {
+      background-color: #e6ac00;          /* 深黄色 */
+    }
+    
+    /* 状态区域：显示操作反馈信息 */
+    #statusArea {
+      margin: 15px 0;                     /* 上下外边距15px */
+      padding: 10px;                      /* 内边距10px */
+      background-color: #f5f5f5;          /* 浅灰背景 */
+      border-radius: 4px;                   /* 圆角4px */
+      min-height: 20px;                     /* 最小高度20px */
+      font-size: 13px;                      /* 字号13px */
+      word-break: break-all;                /* 长文本自动换行 */
+      border: 1px solid #ccc;               /* 灰色边框 */
+    }
+    
+    /* 标签页容器：位于输出区域上方 */
+    .tabs-container {
+      margin-top: 10px;
+      border-bottom: 1px solid #ddd;
+      overflow: hidden;
+    }
+
+    .tabs-scroll {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      max-width: 140px;
+      padding: 4px 8px;
+      border-radius: 4px 4px 0 0;
+      background-color: #f1f3f4;
+      color: #555;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      border: 1px solid transparent;
+      border-bottom: none;
+    }
+
+    .tab.active {
+      background-color: #ffffff;
+      color: #1a73e8;
+      border-color: #ddd;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.06);
+      font-weight: 600;
+    }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .tab-close {
+      flex: 0 0 auto;
+      font-size: 10px;
+      color: #999;
+      cursor: pointer;
+      padding: 0 2px;
+    }
+
+    .tab-close:hover {
+      color: #e53935;
+    }
+
+    .tab-add {
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      border-radius: 4px 4px 0 0;
+      background-color: #e8f0fe;
+      color: #1a73e8;
+      font-size: 14px;
+      cursor: default;
+      display: none; /* 预留，将来如需手动新建标签页可启用 */
+    }
+
+    /* Markdown输出框：显示当前标签页内容 */
+    #markdownOutput {
+      width: 100%;
+      height: 260px;
+      display: none;
+      margin-top: 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 0 0 4px 4px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      box-sizing: border-box;
+      background-color: #ffffff;
+    }
+    
+    /* 链接选择器模态框：全屏遮罩层（无暗化背景） */
+    #linkSelectorModal {
+      display: none;                        /* 默认隐藏 */
+      position: fixed;                      /* 固定定位 */
+      top: 0;                               /* 顶部对齐 */
+      left: 0;                              /* 左侧对齐 */
+      width: 100%;                          /* 占满屏幕宽度 */
+      height: 100%;                         /* 占满屏幕高度 */
+      z-index: 1000;                        /* 最高层级 */
+    }
+    
+    /* 模态框显示状态 */
+    #linkSelectorModal.show {
+      display: block;                       /* 显示模态框 */
+    }
+    
+    /* 模态框内容容器：居中显示 */
+    #linkSelectorContent {
+      position: relative;                   /* 相对定位 */
+      background-color: white;            /* 白色背景 */
+      margin: 2% auto;                      /* 垂直2%间距，水平居中 */
+      padding: 20px;                        /* 内边距20px */
+      width: 95%;                           /* 占父容器95%宽度 */
+      max-width: 900px;                     /* 最大宽度900px */
+      max-height: 90vh;                     /* 最大高度90%视口 */
+      overflow-y: auto;                     /* 垂直滚动条 */
+      border-radius: 8px;                     /* 圆角8px */
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);  /* 阴影效果 */
+    }
+
+    /* 链接列表容器：可滚动 */
+    #linkList {
+      max-height: 600px;                    /* 最大高度600px */
+      overflow-y: auto;                     /* 垂直滚动 */
+      margin: 15px 0;                       /* 上下外边距15px */
+      border: 1px solid #ddd;               /* 浅灰边框 */
+      border-radius: 4px;                     /* 圆角4px */
+      padding: 10px;                          /* 内边距10px */
+      background-color: #fafafa;              /* 非常浅的灰色背景 */
+    }
+    
+    /* 链接分组：按路径分组显示 */
+    .link-group {
+      margin-bottom: 15px;                    /* 组间间距15px */
+      border-bottom: 1px solid #eee;          /* 底部分隔线 */
+      padding-bottom: 10px;                     /* 底部内边距10px */
+    }
+    
+    /* 分组标题栏：可折叠 */
+    .link-group-header {
+      display: flex;                          /* 弹性布局 */
+      align-items: center;                    /* 垂直居中 */
+      padding: 5px 0;                           /* 上下内边距5px */
+      font-weight: bold;                        /* 粗体 */
+      background-color: #f8f9fa;                /* 浅灰背景 */
+      border-radius: 4px;                         /* 圆角4px */
+      margin-bottom: 8px;                           /* 底部外边距8px */
+    }
+    
+    /* 分组复选框：全选/取消全选 */
+    .link-group-header .group-checkbox {
+      margin-right: 10px;                     /* 右侧间距10px */
+      width: 18px;                              /* 复选框宽度18px */
+      height: 18px;                             /* 复选框高度18px */
+    }
+    
+    /* 分组标题：可点击 */
+    .link-group-title {
+      flex: 1;                                  /* 占满剩余空间 */
+      margin: 0;                                /* 无外边距 */
+      font-size: 14px;                          /* 字号14px */
+      cursor: pointer;                          /* 手型光标 */
+    }
+    
+    /* 链接容器：缩进显示 */
+    .link-container {
+      padding-left: 20px;                       /* 左侧缩进20px */
+    }
+    
+    /* 单个链接项：复选框+标签 */
+    .link-item {
+      display: flex;                            /* 弹性布局 */
+      align-items: center;                      /* 垂直居中 */
+      padding: 5px 0;                             /* 上下内边距5px */
+      border-bottom: 1px solid #f0f0f0;           /* 底部分隔线 */
+    }
+    
+    /* 链接复选框：选择单个链接 */
+    .link-item .link-checkbox {
+      margin-right: 10px;                       /* 右侧间距10px */
+    }
+    
+    /* 链接标签：显示简化路径 */
+    .link-item .link-label {
+      flex: 1;                                    /* 占满剩余空间 */
+      font-size: 13px;                            /* 字号13px */
+      cursor: pointer;                            /* 手型光标 */
+      word-break: break-all;                        /* 长文本自动换行 */
+    }
+    
+    /* 链接标签悬停效果：下划线 */
+    .link-item label:hover {
+      text-decoration: underline;                 /* 悬停下划线 */
+    }
+    
+    /* 模态框按钮组：底部操作区 */
+    .modal-buttons {
+      display: flex;                              /* 弹性布局 */
+      justify-content: space-between;               /* 两端对齐 */
+      gap: 10px;                                    /* 按钮间距10px */
+      margin-top: 15px;                             /* 顶部外边距15px */
+    }
+    
+    /* 模态框按钮：统一样式 */
+    .modal-buttons button {
+      flex: 1;                                      /* 等宽分布 */
+      padding: 10px;                                /* 内边距10px */
+      font-size: 14px;                                /* 字号14px */
+    }
+    
+    /* 全选按钮：绿色主题 */
+    #selectAllBtn {
+      background-color: #34a853;                    /* Google绿色 */
+    }
+    
+    /* 全选按钮悬停：深绿色 */
+    #selectAllBtn:hover {
+      background-color: #2e9649;                      /* 深绿色 */
+    }
+    
+    /* 确认按钮：蓝色主题 */
+    #confirmLinkBtn {
+      background-color: #4285f4;                      /* Google蓝色 */
+    }
+    
+    /* 确认按钮悬停：深蓝色 */
+    #confirmLinkBtn:hover {
+      background-color: #3367d6;                        /* 深蓝色 */
+    }
+    
+    /* 取消按钮：红色主题 */
+    #cancelLinkBtn {
+      background-color: #ea4335;                        /* Google红色 */
+    }
+    
+    /* 取消按钮悬停：深红色 */
+    #cancelLinkBtn:hover {
+      background-color: #d33a2c;                         /* 深红色 */
+    }
+
+    /* 设置面板容器 */
+    #settingsPanel {
+      display: none;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 15px;
+      position: relative;
+      z-index: 100;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* 设置面板显示状态 */
+    #settingsPanel.show {
+      display: block !important;
+    }
+
+    /* 设置项容器 */
+    .settings-item {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* 设置项最后一个无下边框 */
+    .settings-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    /* 设置项标题 */
+    .settings-item label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    /* 复选框样式 */
+    .settings-item input[type="checkbox"] {
+      margin-right: 8px;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    /* 复选框标签 */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* 单选按钮组 */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 单选按钮项 */
+    .radio-item {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* 单选按钮 */
+    .radio-item input[type="radio"] {
+      margin-right: 8px;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    /* 设置面板关闭按钮 */
+    #closeSettingsBtn {
+      background-color: #999;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    /* 设置面板关闭按钮悬停 */
+    #closeSettingsBtn:hover {
+      background-color: #777;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- 第一组按钮：核心操作 -->
+  <div class="button-group">
+    <!-- 提取当前页面内容按钮：蓝色主题 -->
+    <button id="extractButton">📄 提取当前页</button>
+    <!-- 全站抓取按钮：橙色主题，抓取中变红色 -->
+    <button id="crawlButton">🌐 抓取全站</button>
+  </div>
+  
+  <!-- 第二组按钮：内容处理操作 -->
+  <div class="button-group">
+    <!-- 预览按钮：默认禁用，有内容后启用 -->
+    <button id="previewButton" disabled>👁️ 预览</button>
+    <!-- Ctrl+左键预览：特殊预览模式 -->
+    <button id="ctrlClickPreviewButton">👁️ Ctrl+左键预览</button>
+    <!-- 格式化按钮：默认禁用，有内容后启用 -->
+    <button id="formatButton" disabled>✨ 格式化</button>
+    <!-- 下载按钮：默认禁用，有内容后启用 -->
+    <button id="downloadButton" disabled>💾 下载</button>
+    <!-- 设置按钮：黄色主题 -->
+    <button id="settingsButton">⚙️ 设置</button>
+  </div>
+  
+  <!-- 第三组按钮：全站抓取设置 -->
+  <div class="button-group">
+    <!-- 全站抓取深度选择器 -->
+    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+      <label style="font-size: 12px; color: #555; white-space: nowrap;">抓取目录深度:</label>
+      <select id="crawlDepth" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; flex: 1;">
+        <option value="1">1级目录相同</option>
+        <option value="2" selected>2级目录相同</option>
+        <option value="3">3级目录相同</option>
+        <option value="4">4级目录相同</option>
+        <option value="full">完整路径相同</option>
+      </select>
+    </div>
+  </div>
+  
+  <!-- 状态显示区域：显示操作反馈和进度 -->
+  <div id="statusArea">请选择操作...</div>
+
+  <!-- 标签页 + Markdown内容输出区域 -->
+  <div id="tabsArea" style="display:none;">
+    <div class="tabs-container">
+      <div id="tabsScroll" class="tabs-scroll">
+        <!-- 标签页由 popup.js 动态注入：.tab[data-id] -->
+      </div>
+    </div>
+    <textarea id="markdownOutput" placeholder="提取的内容将显示在这里..."></textarea>
+  </div>
+  
+
+
+
+  <!-- 设置面板 -->
+  <div id="settingsPanel">
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: #333;">⚙️ 设置选项</h3>
+
+    <!-- 翻译类设置 -->
+    <div class="settings-item">
+      <label>翻译显示模式</label>
+      <div class="checkbox-label">
+        <input type="checkbox" id="bilingual-mode" />
+        <span>中英对照模式（翻译显示在原文下方，不覆盖原文）</span>
+      </div>
+    </div>
+
+    <!-- 导出语言设置 -->
+    <div class="settings-item">
+      <label>导出语言设置</label>
+      <div class="radio-group">
+        <div class="radio-item">
+          <input type="radio" id="export-lang-original" name="export-language" value="original" checked />
+          <span>保持原有语言（默认）</span>
+        </div>
+        <div class="radio-item">
+          <input type="radio" id="export-lang-english" name="export-language" value="english" />
+          <span>统一为英文</span>
+        </div>
+        <div class="radio-item">
+          <input type="radio" id="export-lang-chinese" name="export-language" value="chinese" />
+          <span>统一为中文</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关闭设置面板按钮 -->
+    <button id="closeSettingsBtn">关闭设置</button>
+  </div>
+
+  <!-- 引入弹窗交互逻辑脚本 -->
+  <script src="popup.js"></script>
+</body>
+</html>
